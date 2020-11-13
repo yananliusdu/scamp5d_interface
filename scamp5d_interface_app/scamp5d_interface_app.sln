@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.2036
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "scamp5d_interface_app", "scamp5d_interface_app.vcxproj", "{EB81A223-471F-45ED-994D-7B92F1D54F25}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EB81A223-471F-45ED-994D-7B92F1D54F25}.Debug|x64.ActiveCfg = Debug|x64
+		{EB81A223-471F-45ED-994D-7B92F1D54F25}.Debug|x64.Build.0 = Debug|x64
+		{EB81A223-471F-45ED-994D-7B92F1D54F25}.Debug|x86.ActiveCfg = Debug|Win32
+		{EB81A223-471F-45ED-994D-7B92F1D54F25}.Debug|x86.Build.0 = Debug|Win32
+		{EB81A223-471F-45ED-994D-7B92F1D54F25}.Release|x64.ActiveCfg = Release|x64
+		{EB81A223-471F-45ED-994D-7B92F1D54F25}.Release|x64.Build.0 = Release|x64
+		{EB81A223-471F-45ED-994D-7B92F1D54F25}.Release|x86.ActiveCfg = Release|Win32
+		{EB81A223-471F-45ED-994D-7B92F1D54F25}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {182DB233-B66C-429D-B9BC-D86E2113313C}
+	EndGlobalSection
+EndGlobal
