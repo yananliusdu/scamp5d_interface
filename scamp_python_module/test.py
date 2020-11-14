@@ -1,20 +1,29 @@
 
 import io
+import math
 import time
 import scamp
 import tkinter as tk
 from PIL import Image, ImageTk
 
-
+record_frame_num = 0
+record_image_num = 0
 def process_packet(packet):
     global DisplayCanvas
     global DisplayImage
-
+    global record_frame_num
+    global record_image_num
     if packet['type']=='data':
-    
         lc = packet['loopcounter']
+        if lc == record_frame_num:
+            print('same frame', lc, record_frame_num)
+        else:
+            print('new frame', lc, record_frame_num)
+            record_image_num = 0
+        record_frame_num = lc
         datatype = packet['datatype']
-
+        j_w = record_image_num % 4
+        j_h = math.floor(record_image_num / 4)
         # print(lc, datatype)
         
         if datatype == 'TEXT':
@@ -26,17 +35,17 @@ def process_packet(packet):
             h = packet['height']
             print('[%d] aout %dx%d >> %d' % (lc, w, h, packet['channel']))
             img = Image.frombytes('L', (w, h), packet['buffer']).transpose(Image.FLIP_LEFT_RIGHT).transpose(Image.ROTATE_180)
-            DisplayImage[0] = ImageTk.PhotoImage(img)
-            DisplayCanvas[0].create_image(0, 0, image=DisplayImage[0], anchor=tk.NW)
-
+            DisplayImage[record_image_num] = ImageTk.PhotoImage(img)
+            DisplayCanvas[record_image_num].create_image(j_w*W, j_h*H, image=DisplayImage[record_image_num], anchor=tk.NW)
+            record_image_num += 1
         elif datatype == 'SCAMP5_DOUT':
             w = packet['width']
             h = packet['height']
             print('[%d] dout %dx%d >> %d' % (lc, w, h, packet['channel']))
             img = Image.frombytes('L', (w, h), packet['buffer']).transpose(Image.FLIP_LEFT_RIGHT).transpose(Image.ROTATE_180)
-            DisplayImage[1] = ImageTk.PhotoImage(img)
-            DisplayCanvas[1].create_image(0, 0, image=DisplayImage[1], anchor=tk.NW)
-
+            DisplayImage[record_image_num] = ImageTk.PhotoImage(img)
+            DisplayCanvas[record_image_num].create_image(j_w*W, j_h*H, image=DisplayImage[record_image_num], anchor=tk.NW)
+            record_image_num += 1
         elif datatype == 'INT16':
             print('[%d] int16 %dx%d >> %d' % (lc, packet['n_rows'], packet['n_cols'], packet['channel']))
 
@@ -66,7 +75,6 @@ def process_packet(packet):
 def slider_1_callback(value):
     scamp.send_gui_value(0, int(value))
 
-
 def check_1_callback():
     global Check_1_Var
     global Send_Msg_On_Quit
@@ -77,11 +85,8 @@ def check_1_callback():
         scamp.send_message(scamp.VS_MSG_HOST_DC, 0, 0)
         Send_Msg_On_Quit = False
 
-
 def main_process():
-
     scamp.routine()
-
     while True:
         packet = scamp.get_packet()
         if packet is None:
@@ -104,16 +109,24 @@ tk_root.title('Scamp5d Python App')
 W = 256
 H = 256
 
+#design the layout of images
 N_Display = 10
+w_num = 4
+h_num = 3
 DisplayImage = []
 DisplayCanvas = []
+j_w = 0
+j_h = 0
+canvas = tk.Canvas(tk_root, width=W * w_num, height=H * h_num, bd=0)
 for i in range(N_Display):
     image = ImageTk.PhotoImage(Image.frombytes(mode='L', size=(W, H), data=bytes(W*H)))
     DisplayImage.append(image)
-    canvas = tk.Canvas(tk_root, width=W, height=H, bd=0)
     DisplayCanvas.append(canvas)
     canvas.pack()
-    canvas.create_image(0, 0, image=DisplayImage[i], anchor=tk.NW)
+    j_w = i%4
+    j_h = math.floor(i/4)
+    canvas.create_image(j_w*W, j_h*H, image=DisplayImage[i], anchor=tk.NW)
+############################
 
 Slider_1 = tk.Scale(tk_root, from_=-100, to=100, orient=tk.HORIZONTAL, command=slider_1_callback)
 Slider_1.pack()
