@@ -71,9 +71,8 @@ def process_packet(packet):
     else:
         print('packet: type=%s, size=%d' % (packet['type'], packet['size']))
 
-
 def slider_1_callback(value):
-    scamp.send_gui_value(0, int(value))
+    scamp.send_gui_value(1, int(value))
 
 def check_1_callback():
     global Check_1_Var
@@ -128,7 +127,7 @@ for i in range(N_Display):
     canvas.create_image(j_w*W, j_h*H, image=DisplayImage[i], anchor=tk.NW)
 ############################
 
-Slider_1 = tk.Scale(tk_root, from_=-100, to=100, orient=tk.HORIZONTAL, command=slider_1_callback)
+Slider_1 = tk.Scale(tk_root, from_=0, to=2141, orient=tk.HORIZONTAL, command=slider_1_callback)
 Slider_1.pack()
 
 Send_Msg_On_Quit = False
