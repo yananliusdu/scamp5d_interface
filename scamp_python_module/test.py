@@ -1,25 +1,47 @@
 
-import io
+import sys
 import math
 import time
 import scamp
 import tkinter as tk
 from PIL import Image, ImageTk
 
+sys.path.insert(1, 'C:\\PycharmWorkspace\\HelloPythonDeeplearning\\scamp5d_interface\\scamp_python_module\\coopeliaAPI\\')
+import b0RemoteApi
+import numpy as np
+import cv2
+
+shared_path_test_image = 'C:\\CDT project\\DeepCNN\\carTracking\\carxyV4\\scamp5d_host\\bin\\shared_image_test_0.bmp'
+shared_path_shown_image = 'C:\\CDT project\\DeepCNN\\carTracking\\carxyV4\\scamp5d_host\\bin\\shared_image_show_0.bmp'
 record_frame_num = 0
 record_image_num = 0
+label_num = 5
+show_img_res = 256
+target_step = 0.05
+new_frame = False
+client = None
+target = 0
+activeVisionSensor = 0
+scamp_detected_x = -1
+scamp_detected_y = -1
+
 def process_packet(packet):
     global DisplayCanvas
     global DisplayImage
     global record_frame_num
     global record_image_num
+    global new_frame
+    global scamp_detected_x
+    global scamp_detected_y
     if packet['type']=='data':
         lc = packet['loopcounter']
         if lc == record_frame_num:
             print('same frame', lc, record_frame_num)
+            new_frame = False
         else:
             print('new frame', lc, record_frame_num)
             record_image_num = 0
+            new_frame = True
         record_frame_num = lc
         datatype = packet['datatype']
         j_w = record_image_num % 4
@@ -28,7 +50,13 @@ def process_packet(packet):
         
         if datatype == 'TEXT':
             print('[%d] text: %s' % (lc, repr(packet['text'])))
-            # None
+            result = packet['text']
+
+            if 'predictions:' in result:
+                result = result.split()
+                scamp_detected_x = int(result[1])
+                scamp_detected_y = int(result[2])
+                print(scamp_detected_x, scamp_detected_y)
             
         elif datatype == 'SCAMP5_AOUT':
             w = packet['width']
@@ -57,7 +85,6 @@ def process_packet(packet):
             print('[%d] float %dx%d >> %d' % (lc, packet['n_rows'], packet['n_cols'], packet['channel']))
 
         elif datatype == 'REQUEST':
-
             if packet['filetype']== 'IMAGE':
                 print('[%d] request image %s %d' % (lc, repr(packet['filepath']), packet['n_bits']))
                 img = Image.open(packet['filepath']).transpose(Image.FLIP_TOP_BOTTOM)
@@ -67,7 +94,6 @@ def process_packet(packet):
                 print('[%d] request file %s' % (lc, repr(packet['filepath'])))
                 with open(packet['filepath'], "rb") as f:
                     scamp.send_file(f.read())
-
     else:
         print('packet: type=%s, size=%d' % (packet['type'], packet['size']))
 
@@ -94,20 +120,68 @@ def main_process():
             process_packet(packet)
 
     tk_root.update_idletasks()
-
     tk_root.after(1, main_process)
 
+def coopelia_api_ini():
+    # with b0RemoteApi.RemoteApiClient('b0RemoteApi_CoppeliaSim_Python', 'b0RemoteApi', 60) as client:
+    global client
+    global target
+    global activeVisionSensor
+    client = b0RemoteApi.RemoteApiClient('b0RemoteApi_CoppeliaSim_Python', 'b0RemoteApi', 60)
+    client.simxStartSimulation(client.simxServiceCall())
+    client.simxAddStatusbarMessage('Hello from PyCharm Python', client.simxDefaultPublisher())
+    res, activeVisionSensor = client.simxGetObjectHandle('Vision_sensor', client.simxServiceCall())
+    # res, resolution, image = client.simxGetVisionSensorImage(activeVisionSensor, False, client.simxServiceCall())
+    res, target = client.simxGetObjectHandle('Quadricopter_target', client.simxServiceCall())
+    # print('target', target)
+    # time.sleep(1)
 
-# Entry Point
+def api_image_process_motion_control(x, y):
+    dim = (64, 64)
+    ## image capturing from Coppeliasim
+    res, resolution, image = client.simxGetVisionSensorImage(activeVisionSensor, False, client.simxServiceCall())
+    img = np.frombuffer(image, dtype=np.ubyte)
+    img.resize([resolution[0], resolution[1], 3])
+    img = np.rot90(img, 2)
+    img = np.fliplr(img)
+    img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+    gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    cv2.imwrite(shared_path_shown_image, gray_img)
+    gray64 = cv2.resize(gray_img, dim, cv2.INTER_NEAREST)
+    tile = np.tile(gray64, (4, 4))
+    cv2.imwrite(shared_path_test_image, tile)
+
+    # motion control
+    if x >= 0 and y >= 0:
+        res, target_pos = client.simxGetObjectPosition(target, -1, client.simxServiceCall())
+        # print(target_pos)
+        ctr_pos0 = target_pos[0] + (x - 2) * target_step
+        ctr_pos1 = target_pos[1] + (y - 2) * target_step
+        set_pos = target_pos
+        set_pos[0] = ctr_pos0
+        set_pos[1] = ctr_pos1
+        client.simxSetObjectPosition(target, -1, set_pos, client.simxServiceCall())
+
+def api_main_process():
+    scamp.routine()
+    while True:
+        packet = scamp.get_packet()
+        if packet is None:
+            break
+        else:
+            process_packet(packet)
+            if new_frame:
+                api_image_process_motion_control(scamp_detected_x, scamp_detected_y)
+    tk_root.update_idletasks()
+    tk_root.after(1, api_main_process)
 
 Connection_Type = 'USB'
 
+#GUI design
 tk_root = tk.Tk()
 tk_root.title('Scamp5d Python App')
-
 W = 256
 H = 256
-
 #design the layout of images
 N_Display = 10
 w_num = 4
@@ -141,7 +215,9 @@ else:
     print('open TCP connection...')
     scamp.open_tcp('127.0.0.1',27888)
 
-main_process()
+# main_process()
+coopelia_api_ini()
+api_main_process()
 tk_root.mainloop()
 
 if Send_Msg_On_Quit:
@@ -149,6 +225,9 @@ if Send_Msg_On_Quit:
 
 time.sleep(0.05)
 scamp.close()
+cv2.destroyAllWindows()
 print('End.')
-
 exit()
+
+
+
