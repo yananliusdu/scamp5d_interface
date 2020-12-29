@@ -7,9 +7,11 @@ import tkinter as tk
 from PIL import Image, ImageTk
 
 sys.path.insert(1, 'C:\\PycharmWorkspace\\HelloPythonDeeplearning\\scamp5d_interface\\scamp_python_module\\coopeliaAPI\\')
+sys.path.insert(1, 'C:\\PycharmWorkspace\\HelloPythonDeeplearning\\VisualisationProject\\')
 import b0RemoteApi
 import numpy as np
 import cv2
+from data_visulisation_function import *
 
 shared_path_test_image = 'C:\\CDT project\\DeepCNN\\carTracking\\car_xyrV1\\results\\dataforSCAMP\\scamp5d_host\\bin\\shared_file\\shared_image_test_0.bmp'
 shared_path_shown_image = 'C:\\CDT project\\DeepCNN\\carTracking\\car_xyrV1\\results\\dataforSCAMP\\scamp5d_host\\bin\\shared_file\\shared_image_show_0.bmp'
@@ -37,6 +39,9 @@ def process_packet(packet):
     global new_frame
     global scamp_detected_x
     global scamp_detected_y
+    global x_prediction
+    global y_prediction
+
     if packet['type']=='data':
         lc = packet['loopcounter']
         if lc == record_frame_num:
@@ -135,7 +140,7 @@ def coopelia_api_ini():
     global client
     global target
     global activeVisionSensor
-    client = b0RemoteApi.RemoteApiClient('b0RemoteApi_CoppeliaSim_Python', 'b0RemoteApi_chaotic', 60)
+    client = b0RemoteApi.RemoteApiClient('b0RemoteApi_CoppeliaSim_Python', 'b0RemoteApi', 60)
     client.simxStartSimulation(client.simxServiceCall())
     client.simxAddStatusbarMessage('Hello from PyCharm Python', client.simxDefaultPublisher())
     res, activeVisionSensor = client.simxGetObjectHandle('Vision_sensor', client.simxServiceCall())
@@ -170,14 +175,13 @@ def api_image_process_motion_control(x, y):
         set_pos[1] = ctr_pos1
         client.simxSetObjectPosition(target, -1, set_pos, client.simxServiceCall())
 
-    #visulisation
-    x_img = round(show_img_res / label_num * (x + 0.5))
-    y_img = round(show_img_res / label_num * (y + 0.5))
-    show_img = cv2.circle(img, (x_img, y_img), radius=circle_radius, color=(255, 0, 255), thickness=3)
-    cv2.imshow('show_img', show_img)
-    # scalar = 5
-    # plotting_prediction_curve(x_plot, y_plot, img, scalar)
-    cv2.waitKey(1)
+        #visulisation
+        x_img = round(show_img_res / label_num * (x + 0.5))
+        y_img = round(show_img_res / label_num * (y + 0.5))
+        show_img = cv2.circle(img, (x_img, y_img), radius=circle_radius, color=(255, 0, 255), thickness=3)
+        show_img = plotting_prediction_curve(x_prediction, y_prediction, show_img, 3)
+        cv2.imshow('show_img', show_img)
+        cv2.waitKey(1)
 
 
 def api_main_process():
