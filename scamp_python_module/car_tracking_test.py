@@ -11,19 +11,23 @@ import b0RemoteApi
 import numpy as np
 import cv2
 
-shared_path_test_image = 'C:\\CDT project\\DeepCNN\\carTracking\\carxyV4\\scamp5d_host\\bin\\shared_image_test_0.bmp'
-shared_path_shown_image = 'C:\\CDT project\\DeepCNN\\carTracking\\carxyV4\\scamp5d_host\\bin\\shared_image_show_0.bmp'
+shared_path_test_image = 'C:\\CDT project\\DeepCNN\\carTracking\\car_xyrV1\\results\\dataforSCAMP\\scamp5d_host\\bin\\shared_file\\shared_image_test_0.bmp'
+shared_path_shown_image = 'C:\\CDT project\\DeepCNN\\carTracking\\car_xyrV1\\results\\dataforSCAMP\\scamp5d_host\\bin\\shared_file\\shared_image_show_0.bmp'
 record_frame_num = 0
 record_image_num = 0
-label_num = 5
+label_num = 8
 show_img_res = 256
-target_step = 0.05
+target_step = 0.02
+circle_radius = 30
+
 new_frame = False
 client = None
 target = 0
 activeVisionSensor = 0
 scamp_detected_x = -1
 scamp_detected_y = -1
+x_prediction = []
+y_prediction = []
 
 def process_packet(packet):
     global DisplayCanvas
@@ -54,8 +58,12 @@ def process_packet(packet):
 
             if 'predictions:' in result:
                 result = result.split()
-                scamp_detected_x = int(result[1])
-                scamp_detected_y = int(result[2])
+                x_prediction = result[1:9]
+                y_prediction = result[9:17]
+                x_prediction = [int(i) for i in x_prediction]
+                y_prediction = [int(i) for i in y_prediction]
+                scamp_detected_x = x_prediction.index(max(x_prediction))
+                scamp_detected_y = 7 - y_prediction.index(max(y_prediction))
                 print(scamp_detected_x, scamp_detected_y)
             
         elif datatype == 'SCAMP5_AOUT':
@@ -127,7 +135,7 @@ def coopelia_api_ini():
     global client
     global target
     global activeVisionSensor
-    client = b0RemoteApi.RemoteApiClient('b0RemoteApi_CoppeliaSim_Python', 'b0RemoteApi', 60)
+    client = b0RemoteApi.RemoteApiClient('b0RemoteApi_CoppeliaSim_Python', 'b0RemoteApi_chaotic', 60)
     client.simxStartSimulation(client.simxServiceCall())
     client.simxAddStatusbarMessage('Hello from PyCharm Python', client.simxDefaultPublisher())
     res, activeVisionSensor = client.simxGetObjectHandle('Vision_sensor', client.simxServiceCall())
@@ -155,12 +163,22 @@ def api_image_process_motion_control(x, y):
     if x >= 0 and y >= 0:
         res, target_pos = client.simxGetObjectPosition(target, -1, client.simxServiceCall())
         # print(target_pos)
-        ctr_pos0 = target_pos[0] + (x - 2) * target_step
-        ctr_pos1 = target_pos[1] + (y - 2) * target_step
+        ctr_pos0 = target_pos[0] + (x - 3.5) * target_step
+        ctr_pos1 = target_pos[1] - (y - 3.5) * target_step
         set_pos = target_pos
         set_pos[0] = ctr_pos0
         set_pos[1] = ctr_pos1
         client.simxSetObjectPosition(target, -1, set_pos, client.simxServiceCall())
+
+    #visulisation
+    x_img = round(show_img_res / label_num * (x + 0.5))
+    y_img = round(show_img_res / label_num * (y + 0.5))
+    show_img = cv2.circle(img, (x_img, y_img), radius=circle_radius, color=(255, 0, 255), thickness=3)
+    cv2.imshow('show_img', show_img)
+    # scalar = 5
+    # plotting_prediction_curve(x_plot, y_plot, img, scalar)
+    cv2.waitKey(1)
+
 
 def api_main_process():
     scamp.routine()
@@ -183,9 +201,9 @@ tk_root.title('SCAMP-5d Python Host App')
 W = 256
 H = 256
 #design the layout of images
-N_Display = 10
+N_Display = 8
 w_num = 4
-h_num = 3
+h_num = 2
 DisplayImage = []
 DisplayCanvas = []
 j_w = 0
