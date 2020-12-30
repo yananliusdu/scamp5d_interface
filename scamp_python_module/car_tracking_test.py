@@ -1,4 +1,3 @@
-
 import sys
 import math
 import time
@@ -6,7 +5,8 @@ import scamp
 import tkinter as tk
 from PIL import Image, ImageTk
 
-sys.path.insert(1, 'C:\\PycharmWorkspace\\HelloPythonDeeplearning\\scamp5d_interface\\scamp_python_module\\coopeliaAPI\\')
+sys.path.insert(1,
+                'C:\\PycharmWorkspace\\HelloPythonDeeplearning\\scamp5d_interface\\scamp_python_module\\coopeliaAPI\\')
 sys.path.insert(1, 'C:\\PycharmWorkspace\\HelloPythonDeeplearning\\VisualisationProject\\')
 import b0RemoteApi
 import numpy as np
@@ -31,6 +31,7 @@ scamp_detected_y = -1
 x_prediction = []
 y_prediction = []
 
+
 def process_packet(packet):
     global DisplayCanvas
     global DisplayImage
@@ -42,7 +43,7 @@ def process_packet(packet):
     global x_prediction
     global y_prediction
 
-    if packet['type']=='data':
+    if packet['type'] == 'data':
         lc = packet['loopcounter']
         if lc == record_frame_num:
             print('same frame', lc, record_frame_num)
@@ -56,7 +57,7 @@ def process_packet(packet):
         j_w = record_image_num % 4
         j_h = math.floor(record_image_num / 4)
         # print(lc, datatype)
-        
+
         if datatype == 'TEXT':
             print('[%d] text: %s' % (lc, repr(packet['text'])))
             result = packet['text']
@@ -70,22 +71,26 @@ def process_packet(packet):
                 scamp_detected_x = x_prediction.index(max(x_prediction))
                 scamp_detected_y = 7 - y_prediction.index(max(y_prediction))
                 print(scamp_detected_x, scamp_detected_y)
-            
+
         elif datatype == 'SCAMP5_AOUT':
             w = packet['width']
             h = packet['height']
             print('[%d] aout %dx%d >> %d' % (lc, w, h, packet['channel']))
-            img = Image.frombytes('L', (w, h), packet['buffer']).transpose(Image.FLIP_LEFT_RIGHT).transpose(Image.ROTATE_180)
+            img = Image.frombytes('L', (w, h), packet['buffer']).transpose(Image.FLIP_LEFT_RIGHT).transpose(
+                Image.ROTATE_180)
             DisplayImage[record_image_num] = ImageTk.PhotoImage(img)
-            DisplayCanvas[record_image_num].create_image(j_w*W, j_h*H, image=DisplayImage[record_image_num], anchor=tk.NW)
+            DisplayCanvas[record_image_num].create_image(j_w * W, j_h * H, image=DisplayImage[record_image_num],
+                                                         anchor=tk.NW)
             record_image_num += 1
         elif datatype == 'SCAMP5_DOUT':
             w = packet['width']
             h = packet['height']
             print('[%d] dout %dx%d >> %d' % (lc, w, h, packet['channel']))
-            img = Image.frombytes('L', (w, h), packet['buffer']).transpose(Image.FLIP_LEFT_RIGHT).transpose(Image.ROTATE_180)
+            img = Image.frombytes('L', (w, h), packet['buffer']).transpose(Image.FLIP_LEFT_RIGHT).transpose(
+                Image.ROTATE_180)
             DisplayImage[record_image_num] = ImageTk.PhotoImage(img)
-            DisplayCanvas[record_image_num].create_image(j_w*W, j_h*H, image=DisplayImage[record_image_num], anchor=tk.NW)
+            DisplayCanvas[record_image_num].create_image(j_w * W, j_h * H, image=DisplayImage[record_image_num],
+                                                         anchor=tk.NW)
             record_image_num += 1
         elif datatype == 'INT16':
             print('[%d] int16 %dx%d >> %d' % (lc, packet['n_rows'], packet['n_cols'], packet['channel']))
@@ -98,20 +103,22 @@ def process_packet(packet):
             print('[%d] float %dx%d >> %d' % (lc, packet['n_rows'], packet['n_cols'], packet['channel']))
 
         elif datatype == 'REQUEST':
-            if packet['filetype']== 'IMAGE':
+            if packet['filetype'] == 'IMAGE':
                 print('[%d] request image %s %d' % (lc, repr(packet['filepath']), packet['n_bits']))
                 img = Image.open(packet['filepath']).transpose(Image.FLIP_TOP_BOTTOM)
                 scamp.send_image(img.tobytes(), img.width, img.height, packet['n_bits'])
 
-            elif packet['filetype']== 'FILE':
+            elif packet['filetype'] == 'FILE':
                 print('[%d] request file %s' % (lc, repr(packet['filepath'])))
                 with open(packet['filepath'], "rb") as f:
                     scamp.send_file(f.read())
     else:
         print('packet: type=%s, size=%d' % (packet['type'], packet['size']))
 
+
 def slider_1_callback(value):
     scamp.send_gui_value(1, int(value))
+
 
 def check_1_callback():
     global Check_1_Var
@@ -122,6 +129,7 @@ def check_1_callback():
     else:
         scamp.send_message(scamp.VS_MSG_HOST_DC, 0, 0)
         Send_Msg_On_Quit = False
+
 
 def main_process():
     scamp.routine()
@@ -134,6 +142,7 @@ def main_process():
 
     tk_root.update_idletasks()
     tk_root.after(1, main_process)
+
 
 def coopelia_api_ini():
     # with b0RemoteApi.RemoteApiClient('b0RemoteApi_CoppeliaSim_Python', 'b0RemoteApi', 60) as client:
@@ -148,6 +157,7 @@ def coopelia_api_ini():
     res, target = client.simxGetObjectHandle('Quadricopter_target', client.simxServiceCall())
     # print('target', target)
     # time.sleep(1)
+
 
 def api_image_process_motion_control(x, y):
     dim = (64, 64)
@@ -175,7 +185,7 @@ def api_image_process_motion_control(x, y):
         set_pos[1] = ctr_pos1
         client.simxSetObjectPosition(target, -1, set_pos, client.simxServiceCall())
 
-        #visulisation
+        # visualisation
         x_img = round(show_img_res / label_num * (x + 0.5))
         y_img = round(show_img_res / label_num * (y + 0.5))
         show_img = cv2.circle(img, (x_img, y_img), radius=circle_radius, color=(255, 0, 255), thickness=3)
@@ -197,14 +207,15 @@ def api_main_process():
     tk_root.update_idletasks()
     tk_root.after(1, api_main_process)
 
+
 Connection_Type = 'USB'
 
-#GUI design
+# GUI design
 tk_root = tk.Tk()
 tk_root.title('SCAMP-5d Python Host App')
 W = 256
 H = 256
-#design the layout of images
+# design the layout of images
 N_Display = 8
 w_num = 4
 h_num = 2
@@ -214,13 +225,13 @@ j_w = 0
 j_h = 0
 canvas = tk.Canvas(tk_root, width=W * w_num, height=H * h_num, bd=0)
 for i in range(N_Display):
-    image = ImageTk.PhotoImage(Image.frombytes(mode='L', size=(W, H), data=bytes(W*H)))
+    image = ImageTk.PhotoImage(Image.frombytes(mode='L', size=(W, H), data=bytes(W * H)))
     DisplayImage.append(image)
     DisplayCanvas.append(canvas)
     canvas.pack()
-    j_w = i%4
-    j_h = math.floor(i/4)
-    canvas.create_image(j_w*W, j_h*H, image=DisplayImage[i], anchor=tk.NW)
+    j_w = i % 4
+    j_h = math.floor(i / 4)
+    canvas.create_image(j_w * W, j_h * H, image=DisplayImage[i], anchor=tk.NW)
 ############################
 
 Slider_1 = tk.Scale(tk_root, from_=0, to=2141, orient=tk.HORIZONTAL, command=slider_1_callback)
@@ -235,7 +246,7 @@ if Connection_Type == 'USB':
     scamp.open_usb('0')
 else:
     print('open TCP connection...')
-    scamp.open_tcp('127.0.0.1',27888)
+    scamp.open_tcp('127.0.0.1', 27888)
 
 # main_process()
 coopelia_api_ini()
@@ -250,6 +261,3 @@ scamp.close()
 cv2.destroyAllWindows()
 print('End.')
 exit()
-
-
-
