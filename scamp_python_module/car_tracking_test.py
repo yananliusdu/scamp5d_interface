@@ -15,6 +15,9 @@ from data_visulisation_function import *
 
 shared_path_test_image = 'C:\\CDT project\\DeepCNN\\carTracking\\car_xyrV1\\results\\dataforSCAMP\\scamp5d_host\\bin\\shared_file\\shared_image_test_0.bmp'
 shared_path_shown_image = 'C:\\CDT project\\DeepCNN\\carTracking\\car_xyrV1\\results\\dataforSCAMP\\scamp5d_host\\bin\\shared_file\\shared_image_show_0.bmp'
+saving_data_path = 'C:\\CDT project\\DeepCNN\\carTracking\\car_xyrV1\\results\\dataforSCAMP\\scamp5d_host\\bin\\scamp_classification_trajectory.txt'
+file = open(saving_data_path, 'w')
+
 record_frame_num = 0
 record_image_num = 0
 label_num = 8
@@ -31,6 +34,8 @@ scamp_detected_y = -1
 x_prediction = []
 y_prediction = []
 
+def saving_trajectory_data(data, file):
+    file.write(str(data) + '\n')
 
 def process_packet(packet):
     global DisplayCanvas
@@ -149,10 +154,12 @@ def coopelia_api_ini():
     global client
     global target
     global activeVisionSensor
-    client = b0RemoteApi.RemoteApiClient('b0RemoteApi_CoppeliaSim_Python', 'b0RemoteApi', 60)
+    global robot
+    client = b0RemoteApi.RemoteApiClient('b0RemoteApi_CoppeliaSim_Python', 'b0RemoteApi_chaotic', 60)
     client.simxStartSimulation(client.simxServiceCall())
     client.simxAddStatusbarMessage('Hello from PyCharm Python', client.simxDefaultPublisher())
     res, activeVisionSensor = client.simxGetObjectHandle('Vision_sensor', client.simxServiceCall())
+    res, robot = client.simxGetObjectHandle('Robotnik_Summit_XL', client.simxServiceCall())
     # res, resolution, image = client.simxGetVisionSensorImage(activeVisionSensor, False, client.simxServiceCall())
     res, target = client.simxGetObjectHandle('Quadricopter_target', client.simxServiceCall())
     # print('target', target)
@@ -177,6 +184,7 @@ def api_image_process_motion_control(x, y):
     # motion control
     if x >= 0 and y >= 0:
         res, target_pos = client.simxGetObjectPosition(target, -1, client.simxServiceCall())
+        res, robot_pos = client.simxGetObjectPosition(robot, -1, client.simxServiceCall())
         # print(target_pos)
         ctr_pos0 = target_pos[0] + (x - 3.5) * target_step
         ctr_pos1 = target_pos[1] - (y - 3.5) * target_step
@@ -184,6 +192,14 @@ def api_image_process_motion_control(x, y):
         set_pos[0] = ctr_pos0
         set_pos[1] = ctr_pos1
         client.simxSetObjectPosition(target, -1, set_pos, client.simxServiceCall())
+
+        # saving trajectory
+        data_list = []
+        data_list.append(robot_pos[0])
+        data_list.append(robot_pos[1])
+        data_list.append(ctr_pos0)
+        data_list.append(ctr_pos1)
+        saving_trajectory_data(data_list, file)
 
         # visualisation
         x_img = round(show_img_res / label_num * (x + 0.5))
