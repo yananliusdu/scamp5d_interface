@@ -12,9 +12,11 @@ import b0RemoteApi
 import numpy as np
 import cv2
 from data_visulisation_function import *
+from multifunctions import *
 
 shared_path_test_image = 'C:\\CDT project\\DeepCNN\\carTracking\\car_xyrV1\\results\\dataforSCAMP\\scamp5d_host\\bin\\shared_file\\shared_image_test_0.bmp'
 shared_path_shown_image = 'C:\\CDT project\\DeepCNN\\carTracking\\car_xyrV1\\results\\dataforSCAMP\\scamp5d_host\\bin\\shared_file\\shared_image_show_0.bmp'
+shared_path_rotation_image = 'C:\\CDT project\\DeepCNN\\carTracking\\car_xyrV1\\results\\dataforSCAMP\\scamp5d_host\\bin\\shared_file\\shared_image_rotation_0.bmp'
 saving_data_path = 'C:\\CDT project\\DeepCNN\\carTracking\\car_xyrV1\\results\\dataforSCAMP\\scamp5d_host\\bin\\scamp_classification_trajectory.txt'
 file = open(saving_data_path, 'a+')
 
@@ -23,7 +25,7 @@ record_image_num = 0
 frame_count = 0
 label_num = 8
 show_img_res = 256
-target_step = 0.015
+target_step = 0.012
 circle_radius = 30
 
 new_frame = False
@@ -37,10 +39,6 @@ y_prediction = []
 
 x_record = []
 y_record = []
-
-
-def saving_trajectory_data(data, file):
-    file.write(str(data) + '\n')
 
 
 def prediction_filter(record_x, record_y, inputs):
@@ -182,7 +180,7 @@ def coopelia_api_ini():
     global target
     global activeVisionSensor
     global robot
-    client = b0RemoteApi.RemoteApiClient('b0RemoteApi_CoppeliaSim_Python', 'b0RemoteApi_chaotic', 60)
+    client = b0RemoteApi.RemoteApiClient('b0RemoteApi_CoppeliaSim_Python', 'b0RemoteApi', 60)
     client.simxStartSimulation(client.simxServiceCall())
     client.simxAddStatusbarMessage('Hello from PyCharm Python', client.simxDefaultPublisher())
     res, activeVisionSensor = client.simxGetObjectHandle('Vision_sensor', client.simxServiceCall())
@@ -226,6 +224,10 @@ def api_image_process_motion_control(x, y):
         show_img = cv2.circle(img, (x_img, y_img), radius=circle_radius, color=(255, 0, 255), thickness=3)
         show_img = plotting_prediction_curve(x_prediction, y_prediction, show_img, 3)
         cv2.imshow('show_img', show_img)
+
+        # saving crop image
+        crop_img = saving_crop_img(64, x, y, gray_img, shared_path_rotation_image)
+        cv2.imshow('crop_img', crop_img)
         cv2.waitKey(1)
 
         # saving trajectory
