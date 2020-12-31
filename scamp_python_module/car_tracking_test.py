@@ -16,7 +16,7 @@ from data_visulisation_function import *
 shared_path_test_image = 'C:\\CDT project\\DeepCNN\\carTracking\\car_xyrV1\\results\\dataforSCAMP\\scamp5d_host\\bin\\shared_file\\shared_image_test_0.bmp'
 shared_path_shown_image = 'C:\\CDT project\\DeepCNN\\carTracking\\car_xyrV1\\results\\dataforSCAMP\\scamp5d_host\\bin\\shared_file\\shared_image_show_0.bmp'
 saving_data_path = 'C:\\CDT project\\DeepCNN\\carTracking\\car_xyrV1\\results\\dataforSCAMP\\scamp5d_host\\bin\\scamp_classification_trajectory.txt'
-file = open(saving_data_path, 'a')
+file = open(saving_data_path, 'a+')
 
 record_frame_num = 0
 record_image_num = 0
@@ -35,8 +35,8 @@ scamp_detected_y = -1
 x_prediction = []
 y_prediction = []
 
-x_record = [3.5, 3.5, 3.5]
-y_record = [3.5, 3.5, 3.5]
+x_record = []
+y_record = []
 
 
 def saving_trajectory_data(data, file):
@@ -45,15 +45,20 @@ def saving_trajectory_data(data, file):
 
 def prediction_filter(record_x, record_y, inputs):
     len_data = 3
-    avg_x = (record_x[-1] + record_x[-2] + record_x[-3]) / len_data
-    avg_y = (record_y[-1] + record_y[-2] + record_y[-3]) / len_data
-    thredhold = 3
-    if abs(inputs[0] - avg_x) >= thredhold:
-        inputs[0] = avg_x
-    record_x.append(inputs[0])
-    if abs(inputs[1] - avg_y) >= thredhold:
-        inputs[1] = avg_y
-    record_y.append(inputs[1])
+
+    if len(x_record) < len_data:
+        x_record.append(inputs[0])
+        y_record.append(inputs[1])
+    else:
+        avg_x = (record_x[-1] + record_x[-2] + record_x[-3]) / len_data
+        avg_y = (record_y[-1] + record_y[-2] + record_y[-3]) / len_data
+        thredhold = 5
+        if abs(inputs[0] - avg_x) >= thredhold:
+            inputs[0] = avg_x
+        record_x.append(inputs[0])
+        if abs(inputs[1] - avg_y) >= thredhold:
+            inputs[1] = avg_y
+        record_y.append(inputs[1])
     return inputs[0], inputs[1]
 
 
@@ -232,8 +237,8 @@ def api_image_process_motion_control(x, y):
         # data_list.append(ctr_pos1)
 
         print('frame counting... ', frame_count)
-        if cv2.waitKey(1) & 0xFF == ord(
-                'q') or frame_count >= 2500:  # Get key to stop stream. Press q for exit over cv window
+        # Get key to stop stream. Press q for exit over cv window
+        if cv2.waitKey(1) & 0xFF == ord('q') or frame_count >= 2500:
             file.close()
             client.simxStopSimulation(client.simxServiceCall())
 
@@ -248,6 +253,7 @@ def api_main_process():
             process_packet(packet)
             if new_frame:
                 api_image_process_motion_control(scamp_detected_x, scamp_detected_y)
+        # tk_root.mainloop()
     tk_root.update_idletasks()
     tk_root.after(1, api_main_process)
 
