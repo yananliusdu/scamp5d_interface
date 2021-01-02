@@ -16,7 +16,7 @@ from multifunctions import *
 
 shared_path_test_image = 'C:\\CDT project\\DeepCNN\\carTracking\\car_xyrV1\\results\\dataforSCAMP\\scamp5d_host\\bin\\shared_file\\shared_image_test_0.bmp'
 shared_path_shown_image = 'C:\\CDT project\\DeepCNN\\carTracking\\car_xyrV1\\results\\dataforSCAMP\\scamp5d_host\\bin\\shared_file\\shared_image_show_0.bmp'
-shared_path_rotation_image = 'C:\\CDT project\\DeepCNN\\carTracking\\car_xyrV1\\results\\dataforSCAMP\\scamp5d_host\\bin\\shared_file\\shared_image_rotation_0.bmp'
+shared_path_rotation_image = 'C:\\CDT project\\DeepCNN\\carTracking\\car_xyrV1\\results\\dataforSCAMP\\scamp5d_host\\bin\\shared_file\\shared_image_rotation_'
 saving_data_path = 'C:\\CDT project\\DeepCNN\\carTracking\\car_xyrV1\\results\\dataforSCAMP\\scamp5d_host\\bin\\scamp_classification_trajectory.txt'
 file = open(saving_data_path, 'a+')
 
@@ -268,9 +268,9 @@ tk_root.title('SCAMP-5d Python Host App')
 W = 256
 H = 256
 # design the layout of images
-N_Display = 8
+N_Display = 12
 w_num = 4
-h_num = 2
+h_num = 3
 DisplayImage = []
 DisplayCanvas = []
 j_w = 0

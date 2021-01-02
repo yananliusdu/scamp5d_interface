@@ -8,6 +8,7 @@
 import cv2
 import numpy as np
 
+
 def saving_crop_img(crop_size, x, y, img, save_path):
     start_x = int(crop_size / 2 * x - crop_size / 4)  # start pixel for cropping
     start_y = int(crop_size / 2 * y - crop_size / 4)
@@ -22,7 +23,8 @@ def saving_crop_img(crop_size, x, y, img, save_path):
     crop_img = img[start_y:start_y + crop_size, start_x:start_x + crop_size]
     # gray_img_crop = cv2.cvtColor(crop_img, cv2.COLOR_BGR2GRAY)
     tile = np.tile(crop_img, (4, 4))
-    cv2.imwrite(save_path, tile)
+    cv2.imwrite(save_path + '0.bmp', tile)
+    cv2.imwrite(save_path + '1.bmp', crop_img)
     return crop_img
 
 
