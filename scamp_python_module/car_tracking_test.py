@@ -34,8 +34,11 @@ target = 0
 activeVisionSensor = 0
 scamp_detected_x = -1
 scamp_detected_y = -1
+scamp_detected_rot = -1
+
 x_prediction = []
 y_prediction = []
+rot_prediction = []
 
 x_record = []
 y_record = []
@@ -63,12 +66,10 @@ def prediction_filter(record_x, record_y, inputs):
 def process_packet(packet):
     global DisplayCanvas
     global DisplayImage
-    global record_frame_num
-    global record_image_num
+    global record_frame_num, record_image_num
     global new_frame
-    global scamp_detected_x
-    global scamp_detected_y
-    global x_prediction, y_prediction
+    global scamp_detected_x, scamp_detected_y, scamp_detected_rot
+    global x_prediction, y_prediction, rot_prediction
     global frame_count
     global x_record, y_record
     if packet['type'] == 'data':
@@ -97,10 +98,19 @@ def process_packet(packet):
                 y_prediction = result[9:17]
                 x_prediction = [int(i) for i in x_prediction]
                 y_prediction = [int(i) for i in y_prediction]
+
                 scamp_detected_x = x_prediction.index(max(x_prediction))
                 scamp_detected_y = 7 - y_prediction.index(max(y_prediction))
+
                 scamp_detected_x, scamp_detected_y = prediction_filter(x_record, y_record, [scamp_detected_x, scamp_detected_y])
                 print(scamp_detected_x, scamp_detected_y)
+
+            if 'prediction_rot:' in result:
+                result = result.split()
+                rot_prediction = result[1:5]
+                rot_prediction = [int(i) for i in rot_prediction]
+                scamp_detected_rot = rot_prediction.index(max(rot_prediction))
+                print(scamp_detected_rot)
 
         elif datatype == 'SCAMP5_AOUT':
             w = packet['width']
@@ -191,7 +201,7 @@ def coopelia_api_ini():
     # time.sleep(1)
 
 
-def api_image_process_motion_control(x, y):
+def api_image_process_motion_control(x, y, r):
     dim = (64, 64)
     ## image capturing from Coppeliasim
     res, resolution, image = client.simxGetVisionSensorImage(activeVisionSensor, False, client.simxServiceCall())
@@ -218,16 +228,17 @@ def api_image_process_motion_control(x, y):
         set_pos[1] = ctr_pos1
         client.simxSetObjectPosition(target, -1, set_pos, client.simxServiceCall())
 
+        # saving crop image
+        crop_img = saving_crop_img(64, x, y, gray_img, shared_path_rotation_image)
+        cv2.imshow('crop_img', crop_img)
+
         # visualisation
         x_img = round(show_img_res / label_num * (x + 0.5))
         y_img = round(show_img_res / label_num * (y + 0.5))
         show_img = cv2.circle(img, (x_img, y_img), radius=circle_radius, color=(255, 0, 255), thickness=3)
         show_img = plotting_prediction_curve(x_prediction, y_prediction, show_img, 3)
+        show_img = plotting_prediction_line_with_centre(show_img, x_img, y_img, scamp_detected_rot)
         cv2.imshow('show_img', show_img)
-
-        # saving crop image
-        crop_img = saving_crop_img(64, x, y, gray_img, shared_path_rotation_image)
-        cv2.imshow('crop_img', crop_img)
         cv2.waitKey(1)
 
         # saving trajectory
@@ -254,7 +265,7 @@ def api_main_process():
         else:
             process_packet(packet)
             if new_frame:
-                api_image_process_motion_control(scamp_detected_x, scamp_detected_y)
+                api_image_process_motion_control(scamp_detected_x, scamp_detected_y, scamp_detected_rot)
         # tk_root.mainloop()
     tk_root.update_idletasks()
     tk_root.after(1, api_main_process)
