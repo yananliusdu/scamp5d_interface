@@ -17,7 +17,7 @@ from multifunctions import *
 shared_path_test_image = 'C:\\CDT project\\DeepCNN\\carTracking\\car_xyrV1\\results\\dataforSCAMP\\scamp5d_host\\bin\\shared_file\\shared_image_test_0.bmp'
 shared_path_shown_image = 'C:\\CDT project\\DeepCNN\\carTracking\\car_xyrV1\\results\\dataforSCAMP\\scamp5d_host\\bin\\shared_file\\shared_image_show_0.bmp'
 shared_path_rotation_image = 'C:\\CDT project\\DeepCNN\\carTracking\\car_xyrV1\\results\\dataforSCAMP\\scamp5d_host\\bin\\shared_file\\shared_image_rotation_'
-saving_data_path = 'C:\\CDT project\\DeepCNN\\carTracking\\car_xyrV1\\results\\dataforSCAMP\\scamp5d_host\\bin\\scamp_classification_trajectory.txt'
+saving_data_path = 'C:\\CDT project\\DeepCNN\\carTracking\\car_xyrV1\\results\\dataforSCAMP\\scamp5d_host\\bin\\scamp_classification_trajectory01041934.txt'
 file = open(saving_data_path, 'a+')
 
 record_frame_num = 0
@@ -25,7 +25,7 @@ record_image_num = 0
 frame_count = 0
 label_num = 8
 show_img_res = 256
-target_step = 0.012
+target_step = 0.022
 circle_radius = 30
 
 new_frame = False
@@ -190,7 +190,7 @@ def coopelia_api_ini():
     global target
     global activeVisionSensor
     global robot
-    client = b0RemoteApi.RemoteApiClient('b0RemoteApi_CoppeliaSim_Python', 'b0RemoteApi', 60)
+    client = b0RemoteApi.RemoteApiClient('b0RemoteApi_CoppeliaSim_Python', 'b0RemoteApi_chaotic', 60)
     client.simxStartSimulation(client.simxServiceCall())
     client.simxAddStatusbarMessage('Hello from PyCharm Python', client.simxDefaultPublisher())
     res, activeVisionSensor = client.simxGetObjectHandle('Vision_sensor', client.simxServiceCall())
@@ -228,6 +228,14 @@ def api_image_process_motion_control(x, y, r):
         set_pos[1] = ctr_pos1
         client.simxSetObjectPosition(target, -1, set_pos, client.simxServiceCall())
 
+        # saving trajectory
+        data_list = [robot_pos[0], robot_pos[1], ctr_pos0, ctr_pos1]
+        saving_trajectory_data(data_list, file)
+        # data_list.append(robot_pos[0])
+        # data_list.append(robot_pos[1])
+        # data_list.append(ctr_pos0)
+        # data_list.append(ctr_pos1)
+
         # saving crop image
         crop_img = saving_crop_img(64, x, y, gray_img, shared_path_rotation_image)
         cv2.imshow('crop_img', crop_img)
@@ -241,13 +249,6 @@ def api_image_process_motion_control(x, y, r):
         cv2.imshow('show_img', show_img)
         cv2.waitKey(1)
 
-        # saving trajectory
-        data_list = [robot_pos[0], robot_pos[1], ctr_pos0, ctr_pos1]
-        saving_trajectory_data(data_list, file)
-        # data_list.append(robot_pos[0])
-        # data_list.append(robot_pos[1])
-        # data_list.append(ctr_pos0)
-        # data_list.append(ctr_pos1)
 
         print('frame counting... ', frame_count)
         # Get key to stop stream. Press q for exit over cv window
