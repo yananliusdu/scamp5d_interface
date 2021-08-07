@@ -25,6 +25,7 @@ activeVisionSensor = 0
 scamp_detected_x = -1
 scamp_detected_y = -1
 
+
 def process_packet(packet):
     global DisplayCanvas
     global DisplayImage
